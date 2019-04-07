@@ -1,0 +1,324 @@
+<pre class='metadata'>
+Title: How Think-Cell Uses Contracts
+Status: D
+Audience: LEWG, EWG
+Editor: Gašper Ažman <gasper.azman@gmail.com>
+Editor: Arno Schödl <XXX@think-cell.com>
+Shortname: DXXXX
+Abstract: Think-Cell's product employs contract assertions to great effect. It would be a shame if the contracts feature in C++ didn't support their use pattern. This is a report on the pattern and its requirements.
+Group: WG21
+Date: 2019-04-06
+Markup Shorthands: markdown yes
+Revision: 3
+ED: https://atomgalaxy.github.io/isocpp-thinkcell-contracts/isocpp-thinkcell-contracts.html
+</pre>
+
+<style>
+.ins, ins, ins *, span.ins, span.ins * {
+  background-color: rgb(200, 250, 200);
+  color: rgb(0, 136, 0);
+  text-decoration: none;
+}
+
+.del, del, del *, span.del, span.del * {
+  background-color: rgb(250, 200, 200);
+  color: rgb(255, 0, 0);
+  text-decoration: line-through;
+  text-decoration-color: rgb(255, 0, 0);
+}
+
+ul .std {
+  list-style-type: none;
+  padding-left: 0px;
+}
+</style>
+
+<pre class='biblio'>
+{
+  "AS2019" : {
+    "authors": [ "Arno Schödl" ],
+    "href": "https://skillsmatter.com/skillscasts/13630-a-practical-approach-to-error-handling",
+    "title": "A Practical Approach to Error Handling: Recording"
+  },
+  "ErrHdlSlides" : {
+    "authors": [ "Arno Schödl" ],
+    "href": "https://www.think-cell.com/en/career/talks/errorhandling/",
+    "title": "A Practical Approach to Error Handling: Slides"
+  }
+}
+</pre>
+
+
+Status of This Document {#status}
+=================================
+
+This document is a field report and not a proposal. It is meant as a data-point
+and input to the design effort regarding the contracts feature. Hopefully, it
+will serve as a tie-breaker between various ways the design can go.
+
+Specifically, it is meant to inform the design of the range of things available
+to do from the contract violation handler.
+
+This document was conceived when Gašper Ažman saw Arno Schödl's talk [[AS2019]]
+([[ErrHdlSlides|slides]]).
+
+
+Context of Think-Cell {#context}
+================================
+
+Think-Cell vend an add-on for Microsoft PowerPoint for use on client machines.
+The work-product of the user and software is a PowerPoint document. Such a
+document is correct by inspection. The worst-case scenario for the user is
+crashing and losing work, which is mitigated by autosaving and backups. The
+worst-cases for Think-Cell are losing customers and doing customer support.
+
+Given that the product automates a lot of interaction with PowerPoint, rollback
+of state is usually impossible on a per-action basis, so the basic exception
+guarantee is the default.
+
+For such a product context, the company has perfected a particular approach to
+contracts and handling disappointment. This approach has worked extremely well,
+allowed rapid code development and innovation, and deployment of code to
+customers with contracts enabled. The developers and users are very happy with
+it.
+
+**This approach is not appropriate for all software.** It is, however,
+extremely appropriate for the above context. We are trying to ensure the
+contracts in C++ are flexible enough to accommodate this use-case, not advocate
+for this to be the only use-case.
+
+
+Approach in Nutshell {#nutshell}
+================================
+
+The program may stray from the *happy path* in many ways, but we can divide them
+into two classes:
+
+- Anticipated, **recoverable errors** that have a recovery path:
+    - *Method*: control flow (throw an exception, ensure it's handled and
+        recovery path engaged).
+    - *Example*: file not found after *Open* dialog (eg. because of a race
+        condition).
+- **Contract violations**; or anticipated errors that are impossible to handle;
+    or anticipated errors that do not yet have a recovery path:
+    - *Method*: violation-level specific, see next section. `always_continue`,
+        possibly call home with infodump.
+
+This document deals with the second class. The first class can be legitimately
+thought-of as normal operation.
+
+
+Design Rationale {#rationale}
+=============================
+
+This schema optimizes for developer, followed by customer satisfaction;
+developers have limited time, so effort should be spent on fixing and handling
+errors that actually pose problems for users. Once a user gets an error, they
+are inconvenienced regardless of the severity. The users are therefore best
+served by fast bug-fixing and triage, because it allows for the best
+prioritization of work.
+
+In addition, developers in the wild often skip error checking because they don't
+know what to do in the event of failure; at Think-Cell, checking is never
+skipped &mdash; *recovery* is.
+
+In other words: if you thought of a possible issue, write an `assert`. The
+`assert` will get a recovery path if it's ever triggered and prioritized.
+
+This means that all calls to Windows APIs get post-condition `assert`s (which
+sometimes exposes resource leaks elsewhere in the program, if they fail - such
+conditions are *not* recoverable at the point of failure). All function
+preconditions get `assert`s. Everything gets an `assert`.
+
+*Asserts also have bugs*: `always_continue` makes `assert` bugs a non-problem
+for users. Once the software calls home with false-positive reports, the bugs
+will be fixed. `always_continue` makes it far less risky to write and ship
+`assert`s.
+
+
+The Levels of Assertions {#leveling}
+====================================
+
+Levels with Undefined Behavior {#levels-UB}
+------------------------------------------
+
+These two levels are for asserts after which behavior is UB.
+
+
+### Level 6: Immediate Crash Likely ### {#level6}
+
+*Examples*: nullptr access, out-of-bounds access, unanticipated API call
+failures.
+
+False alarms are unlikely at this level.
+
+API calls don't fail spuriously, and it is unlikely that the actual bug is
+close. Program operation also *requires* the API call to succeed, so termination
+or hard-UB is likely.
+
+*Anticipated and undrestood API-call failures do not belong in this
+category.*
+
+*Response*:
+-   Disable future reports (future behavior is UB)
+-   On Client Machines:
+    - Error dialog. This increases the chance of getting more info.
+-   On Server: goto infinite loop and wait for a debugger to attach.
+-   Disable future error reporting because we are then in UB-land.
+-   Log, collect info (core dump etc) and call home / prepare email.
+
+
+### Level 5: Program Behavior Undefined After Failure ### {#level5}
+
+*Examples*: Assert failed (precondition violation)
+
+This error category is for assertions which, if they fail, there is no way the
+program is correct.
+
+Asserts can have bugs, so no error dialog to the user here, but:
+
+- disable future reports (future behavior is UB, so reduce noise)
+- On Server: infinite loop (wait for debugger)
+- log, collect info, call home.
+
+In all cases, *continue running*. Please *do* note the application context.
+Bloomberg has the exact opposite approach here (always halt on contract
+violations), *which is appropriate for their context*.
+
+
+Levels with Defined Behavior {#levels-defined}
+----------------------------------------------
+
+Level 4 and below are for violations after which behavior is defined. All these
+have a recovery path, therefore it's always possible to continue running after
+diagnosis.
+
+They differ in the way to respond to the assertion failure.
+
+
+### Untested Situation ### {#level4}
+
+*Examples*:
+- Known pathological condition that was not reproduced in the lab, but has a
+    recovery path
+- An easily-handled API-call error that shouldn't actually happen, and the
+    developer does not know how to trigger it
+
+*Response*:
+- log, collect info, call home
+- Debug build: Error dialog (reproduction found!)
+
+This helps diagnose conditions that are known to be theoretically possible but
+were never observed. It's really useful for diagnosing conditions that occur
+later, as failures of this kind may be harbingers of later more serious issues.
+
+It also allows asking users how they came to this situation, so it can be
+handled properly in the future.
+
+
+### User Experience Degraded ### {#level3}
+
+*Examples*:
+- A 3rd-party bug that isn't completely mitigated
+- Rare issue that hasn't been prioritized yet.
+
+*Response*:
+- log (helps with resolving client complaints)
+- Do not call home. Useful for reproducing user issues, and at that point there
+    is a willing user in the conversation.
+
+
+### Possible user environment issue ### {#level2}
+
+*Examples*: OS misconfiguration, broken PowerPoint installation, 3rd party
+plugin that may or may not play nice in the future, etc.
+
+*Response*:
+- don't even log. (Might not be a problem; if it is, a higher-level assert will
+    catch it later, when it *becomes* a problem.)
+- *but*, during client remote support session, *display error dialog*. Very
+    useful for tech-support.
+
+
+### Trace ### {#level1}
+
+For exceptional but run-of-the-mill situations the developer wants to log in
+debug.
+
+*Example*: file-not-found when opening a file.
+
+*Response*:
+- log, if in debug mode or in a remote support session. Otherwise, do nothing.
+
+
+Feature Requirements {#requirements}
+====================================
+
+The contracts support in C++, from afar, looks like it could be coerced to
+support our use-cases eventually; however, given the various levels of
+contracts, each with its own idea of what the violation handler needs to do, is
+not obvious as to its implementation.
+
+Likewise, getting core dumps and stack traces from the violation handler must be
+at least possible for it to be useful at least for the [[#level6]] and
+[[#level5]] CCSs.
+
+A Straw-Man Proposal {#proposal}
+--------------------------------
+
+A **straw-man proposal** that would enable the Think-Cell use-case might be to
+include a user-specified expression that only gets executed upon the failure of
+an assertion, and returns a "context report" object that can then be understood
+by the violation handler, which can dispatch to the appropriate level handler.
+
+Consider this contrived example:
+
+```cpp
+void get_cursor_pos(int* out_x, int* out_y)
+  [[expects always_continue tc::level_6(): x != null]]
+  [[expects always_continue tc::level_6(): y != null]]
+{
+  POINT point;
+  bool const success = GetCursorPos(&point);
+  [[assert always_continue tc::level_4("unlikely GetCursorPos fail"): success]]
+  if (!success) { // this probably never happens
+    point.x = 0;
+    point.y = 0;
+  }
+  *x = point.x;
+  *y = point.y;
+}
+```
+
+If you would like to stay true to [[n4800]], mentally substitute
+`always_continue` for `default`, which we would ensure to mean `always_continue`
+at build time.
+
+The above, however, would require `std::contract_violation` to expose an
+additional member function that grants access to a type-erased object
+initialized as the payload part of the contract violation:
+
+```cpp
+struct contract_violation {
+  /* ... */
+  std::any /*exposition only*/ const& user_data() const;
+}
+```
+
+This would allow the violation handler to actually perform the various duties
+outlined above.
+
+**The mechanism proposed above is most probably a bad idea**. However, it would
+get the job done, for better or for worse. This paper is about existing
+practice. The authors implore the committee to come up with a solution.
+
+
+FAQ {#FAQ}
+==========
+
+Can a CCS with an `always_continue` semantic can introduce UB?  {#faq-ub}
+-------------------------------------------------------------------------
+
+No, but some committee members seem to think it can. It shouldn't be able to -
+an `always_continue` semantic on a Contract Checking Statement (CCS) does not
+allow the compiler to assume the CCS is true in the subsequent code.
