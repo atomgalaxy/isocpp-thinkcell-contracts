@@ -1230,6 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version 04b354547d55896d854a81cffb3965bd6f8758ec" name="generator">
   <link href="https://atomgalaxy.github.io/isocpp-thinkcell-contracts/isocpp-thinkcell-contracts.html" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
+  <meta content="1176901d3b1a911727072daa86f50f211433816c" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1514,7 +1515,7 @@ pre .property::before, pre .property::after {
     <li>
      <a href="#FAQ"><span class="secno">7</span> <span class="content">FAQ</span></a>
      <ol class="toc">
-      <li><a href="#faq-ub"><span class="secno">7.1</span> <span class="content">Can a CCS with an <code class="highlight"><c- n>always_continue</c-></code> semantic can introduce UB?</span></a>
+      <li><a href="#faq-ub"><span class="secno">7.1</span> <span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic can introduce UB?</span></a>
      </ol>
     <li>
      <a href="#references"><span class="secno"></span> <span class="content">References</span></a>
@@ -1568,8 +1569,9 @@ condition).</p>
 or anticipated errors that do not yet have a recovery path:</p>
      <ul>
       <li data-md>
-       <p><em>Method</em>: violation-level specific, see next section. <code class="highlight"><c- n>always_continue</c-></code>,
-possibly call home with infodump.</p>
+       <p><em>Method</em>: violation-level specific, see next section.
+Always continues, hence the <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic, specified
+explicitly as per <a data-link-type="biblio" href="#biblio-p1429r0">[P1429R0]</a>. Also possibly call home with infodump.</p>
      </ul>
    </ul>
    <p>This document deals with the second class. The first class can be legitimately
@@ -1589,9 +1591,9 @@ skipped — <em>recovery</em> is.</p>
 sometimes exposes resource leaks elsewhere in the program, if they fail - such
 conditions are <em>not</em> recoverable at the point of failure). All function
 preconditions get <code class="highlight"><c- n>assert</c-></code>s. Everything gets an <code class="highlight"><c- n>assert</c-></code>.</p>
-   <p><em>Asserts also have bugs</em>: <code class="highlight"><c- n>always_continue</c-></code> makes <code class="highlight"><c- n>assert</c-></code> bugs a non-problem
+   <p><em>Asserts also have bugs</em>: <code class="highlight"><c- n>check_maybe_continue</c-></code> makes <code class="highlight"><c- n>assert</c-></code> bugs a non-problem
 for users. Once the software calls home with false-positive reports, the bugs
-will be fixed. <code class="highlight"><c- n>always_continue</c-></code> makes it far less risky to write and ship <code class="highlight"><c- n>assert</c-></code>s.</p>
+will be fixed. <code class="highlight"><c- n>check_maybe_continue</c-></code> makes it far less risky to write and ship <code class="highlight"><c- n>assert</c-></code>s.</p>
    <h2 class="heading settled" data-level="5" id="leveling"><span class="secno">5. </span><span class="content">The Levels of Assertions</span><a class="self-link" href="#leveling"></a></h2>
    <h3 class="heading settled" data-level="5.1" id="levels-UB"><span class="secno">5.1. </span><span class="content">Levels with Undefined Behavior</span><a class="self-link" href="#levels-UB"></a></h3>
    <p>These two levels are for asserts after which behavior is UB.</p>
@@ -1715,12 +1717,12 @@ an assertion, and returns a "context report" object that can then be understood
 by the violation handler, which can dispatch to the appropriate level handler.</p>
    <p>Consider this contrived example:</p>
 <pre class="language-cpp highlight"><c- b>void</c-> <c- nf>get_cursor_pos</c-><c- p>(</c-><c- b>int</c-><c- o>*</c-> <c- n>out_x</c-><c- p>,</c-> <c- b>int</c-><c- o>*</c-> <c- n>out_y</c-><c- p>)</c->
-  <c- p>[[</c-><c- n>expects</c-> <c- n>always_continue</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>()</c-><c- o>:</c-> <c- n>x</c-> <c- o>!=</c-> <c- n>null</c-><c- p>]]</c->
-  <c- p>[[</c-><c- n>expects</c-> <c- n>always_continue</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>()</c-><c- o>:</c-> <c- n>y</c-> <c- o>!=</c-> <c- n>null</c-><c- p>]]</c->
+  <c- p>[[</c-><c- n>expects</c-> <c- n>check_maybe_continue</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>()</c-><c- o>:</c-> <c- n>x</c-> <c- o>!=</c-> <c- n>null</c-><c- p>]]</c->
+  <c- p>[[</c-><c- n>expects</c-> <c- n>check_maybe_continue</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>()</c-><c- o>:</c-> <c- n>y</c-> <c- o>!=</c-> <c- n>null</c-><c- p>]]</c->
 <c- p>{</c->
   <c- n>POINT</c-> <c- n>point</c-><c- p>;</c->
   <c- b>bool</c-> <c- k>const</c-> <c- n>success</c-> <c- o>=</c-> <c- n>GetCursorPos</c-><c- p>(</c-><c- o>&amp;</c-><c- n>point</c-><c- p>);</c->
-  <c- p>[[</c-><c- n>assert</c-> <c- n>always_continue</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_4</c-><c- p>(</c-><c- s>"unlikely GetCursorPos fail"</c-><c- p>)</c-><c- o>:</c-> <c- n>success</c-><c- p>]]</c->
+  <c- p>[[</c-><c- n>assert</c-> <c- n>check_maybe_continue</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_4</c-><c- p>(</c-><c- s>"unlikely GetCursorPos fail"</c-><c- p>)</c-><c- o>:</c-> <c- n>success</c-><c- p>]]</c->
   <c- k>if</c-> <c- p>(</c-><c- o>!</c-><c- n>success</c-><c- p>)</c-> <c- p>{</c-> <c- c1>// this probably never happens</c->
     <c- n>point</c-><c- p>.</c-><c- n>x</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c->
     <c- n>point</c-><c- p>.</c-><c- n>y</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c->
@@ -1729,7 +1731,7 @@ by the violation handler, which can dispatch to the appropriate level handler.</
   <c- o>*</c-><c- n>y</c-> <c- o>=</c-> <c- n>point</c-><c- p>.</c-><c- n>y</c-><c- p>;</c->
 <c- p>}</c->
 </pre>
-   <p>If you would like to stay true to <a data-link-type="biblio" href="#biblio-n4800">[n4800]</a>, mentally substitute <code class="highlight"><c- n>always_continue</c-></code> for <code class="highlight"><c- k>default</c-></code>, which we would ensure to mean <code class="highlight"><c- n>always_continue</c-></code> at build time.</p>
+   <p>If you would like to stay true to <a data-link-type="biblio" href="#biblio-n4800">[n4800]</a>, mentally substitute <code class="highlight"><c- n>check_maybe_continue</c-></code> for <code class="highlight"><c- k>default</c-></code>, which we would ensure to mean <code class="highlight"><c- n>check_maybe_continue</c-></code> at build time.</p>
    <p>The above, however, would require <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>contract_violation</c-></code> to expose an
 additional member function that grants access to a type-erased object
 initialized as the payload part of the contract violation:</p>
@@ -1744,9 +1746,9 @@ outlined above.</p>
 get the job done, for better or for worse. This paper is about existing
 practice. The authors implore the committee to come up with a solution.</p>
    <h2 class="heading settled" data-level="7" id="FAQ"><span class="secno">7. </span><span class="content">FAQ</span><a class="self-link" href="#FAQ"></a></h2>
-   <h3 class="heading settled" data-level="7.1" id="faq-ub"><span class="secno">7.1. </span><span class="content">Can a CCS with an <code class="highlight"><c- n>always_continue</c-></code> semantic can introduce UB?</span><a class="self-link" href="#faq-ub"></a></h3>
+   <h3 class="heading settled" data-level="7.1" id="faq-ub"><span class="secno">7.1. </span><span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic can introduce UB?</span><a class="self-link" href="#faq-ub"></a></h3>
    <p>No, but some committee members seem to think it can. It shouldn’t be able to -
-an <code class="highlight"><c- n>always_continue</c-></code> semantic on a Contract Checking Statement (CCS) does not
+an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic on a Contract Checking Statement (CCS) does not
 allow the compiler to assume the CCS is true in the subsequent code.</p>
   </main>
 <script>
@@ -1887,4 +1889,6 @@ allow the compiler to assume the CCS is true in the subsequent code.</p>
    <dd>Arno Schödl. <a href="https://www.think-cell.com/en/career/talks/errorhandling/">A Practical Approach to Error Handling: Slides</a>. URL: <a href="https://www.think-cell.com/en/career/talks/errorhandling/">https://www.think-cell.com/en/career/talks/errorhandling/</a>
    <dt id="biblio-n4800">[N4800]
    <dd>Richard Smith. <a href="https://wg21.link/n4800">Working Draft, Standard for Programming Language C++</a>. 21 January 2019. URL: <a href="https://wg21.link/n4800">https://wg21.link/n4800</a>
+   <dt id="biblio-p1429r0">[P1429R0]
+   <dd>Joshua Berne, John Lakos. <a href="https://wg21.link/p1429r0">Contracts That Work</a>. 22 January 2019. URL: <a href="https://wg21.link/p1429r0">https://wg21.link/p1429r0</a>
   </dl>

@@ -101,8 +101,9 @@ into two classes:
         condition).
 - **Contract violations**; or anticipated errors that are impossible to handle;
     or anticipated errors that do not yet have a recovery path:
-    - *Method*: violation-level specific, see next section. `always_continue`,
-        possibly call home with infodump.
+    - *Method*: violation-level specific, see next section.
+        Always continues, hence the `check_maybe_continue` semantic, specified
+        explicitly as per [[P1429R0]]. Also possibly call home with infodump.
 
 This document deals with the second class. The first class can be legitimately
 thought-of as normal operation.
@@ -130,9 +131,9 @@ sometimes exposes resource leaks elsewhere in the program, if they fail - such
 conditions are *not* recoverable at the point of failure). All function
 preconditions get `assert`s. Everything gets an `assert`.
 
-*Asserts also have bugs*: `always_continue` makes `assert` bugs a non-problem
+*Asserts also have bugs*: `check_maybe_continue` makes `assert` bugs a non-problem
 for users. Once the software calls home with false-positive reports, the bugs
-will be fixed. `always_continue` makes it far less risky to write and ship
+will be fixed. `check_maybe_continue` makes it far less risky to write and ship
 `assert`s.
 
 
@@ -275,12 +276,12 @@ Consider this contrived example:
 
 ```cpp
 void get_cursor_pos(int* out_x, int* out_y)
-  [[expects always_continue tc::level_6(): x != null]]
-  [[expects always_continue tc::level_6(): y != null]]
+  [[expects check_maybe_continue tc::level_6(): x != null]]
+  [[expects check_maybe_continue tc::level_6(): y != null]]
 {
   POINT point;
   bool const success = GetCursorPos(&point);
-  [[assert always_continue tc::level_4("unlikely GetCursorPos fail"): success]]
+  [[assert check_maybe_continue tc::level_4("unlikely GetCursorPos fail"): success]]
   if (!success) { // this probably never happens
     point.x = 0;
     point.y = 0;
@@ -291,7 +292,7 @@ void get_cursor_pos(int* out_x, int* out_y)
 ```
 
 If you would like to stay true to [[n4800]], mentally substitute
-`always_continue` for `default`, which we would ensure to mean `always_continue`
+`check_maybe_continue` for `default`, which we would ensure to mean `check_maybe_continue`
 at build time.
 
 The above, however, would require `std::contract_violation` to expose an
@@ -316,9 +317,9 @@ practice. The authors implore the committee to come up with a solution.
 FAQ {#FAQ}
 ==========
 
-Can a CCS with an `always_continue` semantic can introduce UB?  {#faq-ub}
+Can a CCS with an `check_maybe_continue` semantic can introduce UB?  {#faq-ub}
 -------------------------------------------------------------------------
 
 No, but some committee members seem to think it can. It shouldn't be able to -
-an `always_continue` semantic on a Contract Checking Statement (CCS) does not
+an `check_maybe_continue` semantic on a Contract Checking Statement (CCS) does not
 allow the compiler to assume the CCS is true in the subsequent code.
