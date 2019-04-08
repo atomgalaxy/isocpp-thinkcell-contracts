@@ -317,7 +317,7 @@ practice. The authors implore the committee to come up with a solution.
 FAQ {#FAQ}
 ==========
 
-Can a CCS with an `check_maybe_continue` semantic can introduce UB?  {#faq-ub}
+Can a CCS with an `check_maybe_continue` semantic introduce UB?  {#faq-ub}
 -------------------------------------------------------------------------
 
 No, but some committee members seem to think it can. It shouldn't be able to -

@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version 04b354547d55896d854a81cffb3965bd6f8758ec" name="generator">
   <link href="https://atomgalaxy.github.io/isocpp-thinkcell-contracts/isocpp-thinkcell-contracts.html" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="7e9a7145692e8e589120a02009d3ae2bcde2d6b8" name="document-revision">
+  <meta content="1a853b79aae5fb492e36d39d13a6f3935b5ab7d3" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1515,7 +1515,7 @@ pre .property::before, pre .property::after {
     <li>
      <a href="#FAQ"><span class="secno">7</span> <span class="content">FAQ</span></a>
      <ol class="toc">
-      <li><a href="#faq-ub"><span class="secno">7.1</span> <span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic can introduce UB?</span></a>
+      <li><a href="#faq-ub"><span class="secno">7.1</span> <span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic introduce UB?</span></a>
      </ol>
     <li>
      <a href="#references"><span class="secno"></span> <span class="content">References</span></a>
@@ -1746,7 +1746,7 @@ outlined above.</p>
 get the job done, for better or for worse. This paper is about existing
 practice. The authors implore the committee to come up with a solution.</p>
    <h2 class="heading settled" data-level="7" id="FAQ"><span class="secno">7. </span><span class="content">FAQ</span><a class="self-link" href="#FAQ"></a></h2>
-   <h3 class="heading settled" data-level="7.1" id="faq-ub"><span class="secno">7.1. </span><span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic can introduce UB?</span><a class="self-link" href="#faq-ub"></a></h3>
+   <h3 class="heading settled" data-level="7.1" id="faq-ub"><span class="secno">7.1. </span><span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic introduce UB?</span><a class="self-link" href="#faq-ub"></a></h3>
    <p>No, but some committee members seem to think it can. It shouldn’t be able to -
 an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic on a Contract Checking Statement (CCS) does not
 allow the compiler to assume the CCS is true in the subsequent code.</p>
