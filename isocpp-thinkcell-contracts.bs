@@ -152,7 +152,8 @@ False alarms are unlikely at this level. nullptr access or out-of-bounds access 
 API calls serve a purpose, so if they fail, the program is unlikely to work correctly.
 
 *Response*:
--   Disable future reports (future behavior is UB, so further reports are meaingless)
+-   Disable future reports (future behavior is UB, so further reports are
+    meaningless)
 -   On client machines
     - Collect and log info (core dump etc.) and call home / prepare email with that information.
     - Show error dialog, possibly with custom messages requested by the call home. This increases the chance of getting more info from the user.
@@ -168,12 +169,13 @@ failures of API calls where the actual error code is unexpected, but a different
 anticipated and handled: the anticipated error handling path may
 happen to work for the unanticipated error.
 Example: if opening a file already anticipates a missing file, but is encountering a denied access, the program is likely to continue
-without crashing.*
+without crashing.
 
 At this level, a false alarm or at least correct continuation despite the problem is possible, and we do not want to concern the user unnecessarily. Still, program behavior is UB afterwards.
 
 *Response*:
--   Disable future reports (future behavior is UB, so further reports are meaingless)
+-   Disable future reports (future behavior is UB, so further reports are
+    meaningless)
 -   On client machines
     - Collect and log info (core dump etc.) and call home.
     - *Do not show* error dialog, unless a custom message was requested by the call home.
@@ -198,21 +200,26 @@ They differ in the way to respond to the assertion failure.
 ### Untested Situation ### {#level4}
 
 *Examples*:
-- A condition handled in legacy code but which there is no known reproduction. Maybe the handling code can be removed?
+- A condition handled in legacy code but which there is no known reproduction.
+    Maybe the handling code can be removed?
 - A hooked API emitting an error that we transparently pass to the caller,
-  but we have no reproduction for this error and it is unclear if the caller would correctly handle such an error.
+    but we have no reproduction for this error and it is unclear if the caller
+    would correctly handle such an error.
 
 This helps diagnose conditions that are known to be theoretically possible but
-were never observed, so actual behavior is untested and the failure may be harbinger of more serious issues.
+were never observed, so actual behavior is untested and the failure may be
+a harbinger of more serious issues.
 
 It also allows asking users how they came to this situation, so it can be
 handled properly in the future.
 
 *Response*:
--   Do not disable but throttle future reports to avoid excessive delays in program execution
+-   Do not disable but throttle future reports to avoid excessive delays in
+    program execution
 -   On client machines
     - Collect and log info (core dump etc.) and call home.
-    - *Do not show* error dialog, unless a custom message was requested by the call home.
+    - *Do not show* error dialog, unless a custom message was requested by the
+        call home.
 -   On server
     - Notify the administrator
 
@@ -224,7 +231,8 @@ handled properly in the future.
 
 *Response*:
 - Log (helps with resolving client complaints)
-- Do not call home. We know the error exists, and will only address it further if we receive actual customer complaints.
+- Do not call home. We know the error exists, and will only address it further
+    if we receive actual customer complaints.
 
 
 ### Possible user environment issue ### {#level2}
@@ -235,7 +243,8 @@ plugin that may or may not play nice in the future, etc.
 *Response*:
 - In regular operation, do not log. The problem is handled correctly, and if everything else works, we do not need to know.
 - *unless*, during client remote support session, *display error dialog*,
-  because tech support should know about this situation when dealing with a bigger issue that may or may not be related.
+    because tech support should know about this situation when dealing with a
+    bigger issue that may or may not be related.
 
 ### Trace ### {#level1}
 
@@ -257,29 +266,43 @@ contracts, each with its own idea of what the violation handler needs to do, is
 not obvious as to its implementation.
 
 Likewise, getting core dumps and stack traces from the violation handler must be
-at least possible for it to be useful at least for the [[#level4]] and above CCSs.
+at least possible for it to be useful at least for the [[#level4]] and above
+CCSs.
 
-Some assertions are wrapped into a special form, such as `_ASSERTEQUAL(x,y)`, which
-checks `x==y`, but on failure includes the two values in the error report.
+Some assertions are wrapped into a special form, such as `TC_ASSERTEQUAL(x,y)`,
+which checks `x==y`, but on failure includes the two values in the error report.
+
 
 A Straw-Man Proposal {#proposal}
 --------------------------------
 
-A **straw-man proposal** that would enable the think-cell use-case might be the condition
-to return a type contextually convertible to bool, which if evaluating to false, get passed,
-along with the regular `std::contract_violation`, to a specified (templated) handler
-(`tc::level_6`) and may contain extra information (such as, in case of _ASSERTEQUAL, the two values).
+A **straw-man proposal** that would enable the think-cell use-case might be to
+make the return value of the predicate available through an additional accessor
+on `std::contract_violation`, returning a reference to the type-erased value.
+Of course, the value itself is required to be contextually convertible to
+`bool`.
+
+```
+std::contract_violation {
+  /* ... */
+  std::any const& predicate_value() const {
+   /* the std::any is exposition-only - this is probably doable without
+      allocation */
+   /* return the value the failed predicate returned */
+  }
+};
 
 Consider this contrived example:
 
 ```cpp
 void get_cursor_pos(int* x, int* y)
-  [[expects check_maybe_continue tc::level_6(): x != null]]
-  [[expects check_maybe_continue tc::level_6(): y != null]]
+  [[expects check_maybe_continue: tc::level_6(x != null)]]
+  [[expects check_maybe_continue: tc::level_6(y != null)]]
 {
   POINT point;
   bool const success = GetCursorPos(&point);
-  [[assert check_maybe_continue tc::level_4("unlikely GetCursorPos fail"): success]]
+  [[assert check_maybe_continue:
+       tc::level_4(success, "unlikely GetCursorPos fail")]]
   if (!success) { // does this ever happen?
     point.x = 0;
     point.y = 0;
@@ -290,12 +313,12 @@ void get_cursor_pos(int* x, int* y)
 ```
 
 If you would like to stay true to [[n4800]], mentally substitute
-`check_maybe_continue` for `default`, which we would ensure to mean `check_maybe_continue`
-at build time.
+`check_maybe_continue` for `default`, which we would ensure to mean
+`check_maybe_continue` at build time.
 
-**The mechanism proposed above is most probably a bad idea**. However, it would
-get the job done, for better or worse. This paper is about existing
-practice. The authors implore the committee to come up with a solution.
+**The mechanism proposed above is very rudimentary**. However, it would get the
+job done, for better or worse. This paper is about existing practice. The
+authors implore the committee to come up with a solution.
 
 
 FAQ {#FAQ}
@@ -304,6 +327,6 @@ FAQ {#FAQ}
 Can a CCS with an `check_maybe_continue` semantic introduce UB?  {#faq-ub}
 -------------------------------------------------------------------------
 
-No, but some committee members seem to think it can. It shouldn't be able to -
-a `check_maybe_continue` semantic on a Contract Checking Statement (CCS) does not
+No, but some committee members seem to think it can. It shouldn't be able to - a
+`check_maybe_continue` semantic on a Contract Checking Statement (CCS) does not
 allow the compiler to assume the CCS is true in the subsequent code.

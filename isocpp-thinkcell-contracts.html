@@ -2,7 +2,7 @@
  <head>
   <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
   <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
-  <title>DXXXXR3: How Think-Cell Uses Contracts</title>
+  <title>DXXXXR3: How think-cell Uses Contracts</title>
 <style data-fill-with="stylesheet">/******************************************************************************
  *                   Style sheet for the W3C specifications                   *
  *
@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version 04b354547d55896d854a81cffb3965bd6f8758ec" name="generator">
   <link href="https://atomgalaxy.github.io/isocpp-thinkcell-contracts/isocpp-thinkcell-contracts.html" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="1a853b79aae5fb492e36d39d13a6f3935b5ab7d3" name="document-revision">
+  <meta content="c438f159c131ed7b9ce11e6a04e055509be87f96" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1458,7 +1458,7 @@ pre .property::before, pre .property::after {
  <body class="h-entry">
   <div class="head">
    <p data-fill-with="logo"></p>
-   <h1 class="p-name no-ref" id="title">DXXXXR3<br>How Think-Cell Uses Contracts</h1>
+   <h1 class="p-name no-ref" id="title">DXXXXR3<br>How think-cell Uses Contracts</h1>
    <h2 class="no-num no-toc no-ref heading settled" id="subtitle"><span class="content">Draft Proposal, <time class="dt-updated" datetime="2019-04-06">2019-04-06</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
@@ -1468,7 +1468,7 @@ pre .property::before, pre .property::after {
      <dd>
       <dd class="editor p-author h-card vcard"><span class="p-name fn">Gašper Ažman &lt;gasper.azman@gmail.com></span>
      <dd>
-      <dd class="editor p-author h-card vcard"><span class="p-name fn">Arno Schödl &lt;XXX@think-cell.com></span>
+      <dd class="editor p-author h-card vcard"><span class="p-name fn">Arno Schödl &lt;aschoedl@think-cell.com></span>
      <dt>Audience:
      <dd>LEWG, EWG
      <dt>Project:
@@ -1480,13 +1480,13 @@ pre .property::before, pre .property::after {
   </div>
   <div class="p-summary" data-fill-with="abstract">
    <h2 class="no-num no-toc no-ref heading settled" id="abstract"><span class="content">Abstract</span></h2>
-   <p>Think-Cell’s product employs contract assertions to great effect. It would be a shame if the contracts feature in C++ didn’t support their use pattern. This is a report on the pattern and its requirements.</p>
+   <p>think-cell’s product employs contract assertions to great effect. It would be a shame if the contracts feature in C++ didn’t support their use pattern. This is a report on the pattern and its requirements.</p>
   </div>
   <nav data-fill-with="table-of-contents" id="toc">
    <h2 class="no-num no-toc no-ref" id="contents">Table of Contents</h2>
    <ol class="toc" role="directory">
     <li><a href="#status"><span class="secno">1</span> <span class="content">Status of This Document</span></a>
-    <li><a href="#context"><span class="secno">2</span> <span class="content">Context of Think-Cell</span></a>
+    <li><a href="#context"><span class="secno">2</span> <span class="content">Context of think-cell</span></a>
     <li><a href="#nutshell"><span class="secno">3</span> <span class="content">Approach in Nutshell</span></a>
     <li><a href="#rationale"><span class="secno">4</span> <span class="content">Design Rationale</span></a>
     <li>
@@ -1515,7 +1515,7 @@ pre .property::before, pre .property::after {
     <li>
      <a href="#FAQ"><span class="secno">7</span> <span class="content">FAQ</span></a>
      <ol class="toc">
-      <li><a href="#faq-ub"><span class="secno">7.1</span> <span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic introduce UB?</span></a>
+      <li><a href="#faq-ub"><span class="secno">7.1</span> <span class="content">Can a CCS with an `check_maybe_continue` semantic introduce UB?</span></a>
      </ol>
     <li>
      <a href="#references"><span class="secno"></span> <span class="content">References</span></a>
@@ -1532,15 +1532,14 @@ will serve as a tie-breaker between various ways the design can go.</p>
    <p>Specifically, it is meant to inform the design of the range of things available
 to do from the contract violation handler.</p>
    <p>This document was conceived when Gašper Ažman saw Arno Schödl’s talk <a data-link-type="biblio" href="#biblio-as2019">[AS2019]</a> (<a data-link-type="biblio" href="#biblio-errhdlslides">slides</a>).</p>
-   <h2 class="heading settled" data-level="2" id="context"><span class="secno">2. </span><span class="content">Context of Think-Cell</span><a class="self-link" href="#context"></a></h2>
-   <p>Think-Cell vend an add-on for Microsoft PowerPoint for use on client machines.
+   <h2 class="heading settled" data-level="2" id="context"><span class="secno">2. </span><span class="content">Context of think-cell</span><a class="self-link" href="#context"></a></h2>
+   <p>think-cell sells an add-on for Microsoft PowerPoint for use on client machines.
 The work-product of the user and software is a PowerPoint document. Such a
 document is correct by inspection. The worst-case scenario for the user is
 crashing and losing work, which is mitigated by autosaving and backups. The
-worst-cases for Think-Cell are losing customers and doing customer support.</p>
+worst-cases for think-cell are losing customers and doing customer support.</p>
    <p>Given that the product automates a lot of interaction with PowerPoint, rollback
-of state is usually impossible on a per-action basis, so the basic exception
-guarantee is the default.</p>
+of state is usually impossible on a per-action basis, so in practice the software must provide a no-fail guarantee.</p>
    <p>For such a product context, the company has perfected a particular approach to
 contracts and handling disappointment. This approach has worked extremely well,
 allowed rapid code development and innovation, and deployment of code to
@@ -1548,7 +1547,7 @@ customers with contracts enabled. The developers and users are very happy with
 it.</p>
    <p><strong>This approach is not appropriate for all software.</strong> It is, however,
 extremely appropriate for the above context. We are trying to ensure the
-contracts in C++ are flexible enough to accommodate this use-case, not advocate
+contracts in C++ are flexible enough to accommodate this use-case, rather than advocating
 for this to be the only use-case.</p>
    <h2 class="heading settled" data-level="3" id="nutshell"><span class="secno">3. </span><span class="content">Approach in Nutshell</span><a class="self-link" href="#nutshell"></a></h2>
    <p>The program may stray from the <em>happy path</em> in many ways, but we can divide them
@@ -1577,20 +1576,21 @@ explicitly as per <a data-link-type="biblio" href="#biblio-p1429r0">[P1429R0]</a
    <p>This document deals with the second class. The first class can be legitimately
 thought-of as normal operation.</p>
    <h2 class="heading settled" data-level="4" id="rationale"><span class="secno">4. </span><span class="content">Design Rationale</span><a class="self-link" href="#rationale"></a></h2>
-   <p>This schema optimizes for developer, followed by customer satisfaction;
+   <p>This scheme optimizes for developers, followed by customer satisfaction;
 developers have limited time, so effort should be spent on fixing and handling
 errors that actually pose problems for users. Once a user gets an error, they
 are inconvenienced regardless of the severity. The users are therefore best
 served by fast bug-fixing and triage, because it allows for the best
 prioritization of work.</p>
-   <p>In addition, developers in the wild often skip error checking because they don’t
-know what to do in the event of failure; at Think-Cell, checking is never
+   <p>In addition, developers in the wild often skip error checking because they do not
+know what to do in the event of failure; at think-cell, checking is never
 skipped — <em>recovery</em> is.</p>
-   <p>In other words: if you thought of a possible issue, write an <code class="highlight"><c- n>assert</c-></code>. The <code class="highlight"><c- n>assert</c-></code> will get a recovery path if it’s ever triggered and prioritized.</p>
-   <p>This means that all calls to Windows APIs get post-condition <code class="highlight"><c- n>assert</c-></code>s (which
-sometimes exposes resource leaks elsewhere in the program, if they fail - such
-conditions are <em>not</em> recoverable at the point of failure). All function
+   <p>In other words: if you thought of a possible issue, write an <code class="highlight"><c- n>assert</c-></code>. The <code class="highlight"><c- n>assert</c-></code> will get a recovery path if it is ever triggered and prioritized.</p>
+   <p>This means that all calls to Windows APIs get post-condition <code class="highlight"><c- n>assert</c-></code>s. All function
 preconditions get <code class="highlight"><c- n>assert</c-></code>s. Everything gets an <code class="highlight"><c- n>assert</c-></code>.</p>
+   <p>API errors in particular often point to non-local problems.
+For example, resource acquisition may fail because of a resource leak elsewhere.
+Time is better invested in finding the leak than in local recovery.</p>
    <p><em>Asserts also have bugs</em>: <code class="highlight"><c- n>check_maybe_continue</c-></code> makes <code class="highlight"><c- n>assert</c-></code> bugs a non-problem
 for users. Once the software calls home with false-positive reports, the bugs
 will be fixed. <code class="highlight"><c- n>check_maybe_continue</c-></code> makes it far less risky to write and ship <code class="highlight"><c- n>assert</c-></code>s.</p>
@@ -1598,89 +1598,119 @@ will be fixed. <code class="highlight"><c- n>check_maybe_continue</c-></code> ma
    <h3 class="heading settled" data-level="5.1" id="levels-UB"><span class="secno">5.1. </span><span class="content">Levels with Undefined Behavior</span><a class="self-link" href="#levels-UB"></a></h3>
    <p>These two levels are for asserts after which behavior is UB.</p>
    <h4 class="heading settled" data-level="5.1.1" id="level6"><span class="secno">5.1.1. </span><span class="content">Level 6: Immediate Crash Likely</span><a class="self-link" href="#level6"></a></h4>
-   <p><em>Examples</em>: nullptr access, out-of-bounds access, unanticipated API call
-failures.</p>
-   <p>False alarms are unlikely at this level.</p>
-   <p>API calls don’t fail spuriously, and it is unlikely that the actual bug is
-close. Program operation also <em>requires</em> the API call to succeed, so termination
-or hard-UB is likely.</p>
-   <p><em>Anticipated and undrestood API-call failures do not belong in this
-category.</em></p>
+   <p><em>Examples</em>: nullptr access, out-of-bounds access, failures of API calls that are expected to always succeed.</p>
+   <p>False alarms are unlikely at this level. nullptr access or out-of-bounds access is by definition incorrect.
+API calls serve a purpose, so if they fail, the program is unlikely to work correctly.</p>
    <p><em>Response</em>:</p>
    <ul>
     <li data-md>
-     <p>Disable future reports (future behavior is UB)</p>
+     <p>Disable future reports (future behavior is UB, so further reports are
+meaningless)</p>
     <li data-md>
-     <p>On Client Machines:</p>
+     <p>On client machines</p>
      <ul>
       <li data-md>
-       <p>Error dialog. This increases the chance of getting more info.</p>
+       <p>Collect and log info (core dump etc.) and call home / prepare email with that information.</p>
+      <li data-md>
+       <p>Show error dialog, possibly with custom messages requested by the call home. This increases the chance of getting more info from the user.</p>
      </ul>
     <li data-md>
-     <p>On Server: goto infinite loop and wait for a debugger to attach.</p>
-    <li data-md>
-     <p>Disable future error reporting because we are then in UB-land.</p>
-    <li data-md>
-     <p>Log, collect info (core dump etc) and call home / prepare email.</p>
+     <p>On server</p>
+     <ul>
+      <li data-md>
+       <p>Notify the administrator.</p>
+      <li data-md>
+       <p>Go into infinite loop and wait for a debugger to attach.</p>
+     </ul>
    </ul>
    <h4 class="heading settled" data-level="5.1.2" id="level5"><span class="secno">5.1.2. </span><span class="content">Level 5: Program Behavior Undefined After Failure</span><a class="self-link" href="#level5"></a></h4>
-   <p><em>Examples</em>: Assert failed (precondition violation)</p>
-   <p>This error category is for assertions which, if they fail, there is no way the
-program is correct.</p>
-   <p>Asserts can have bugs, so no error dialog to the user here, but:</p>
+   <p><em>Examples</em>: Assert failed (e.g., precondition violation), but assertions can have bugs, too;
+failures of API calls where the actual error code is unexpected, but a different error code is
+anticipated and handled: the anticipated error handling path may
+happen to work for the unanticipated error.
+Example: if opening a file already anticipates a missing file, but is encountering a denied access, the program is likely to continue
+without crashing.</p>
+   <p>At this level, a false alarm or at least correct continuation despite the problem is possible, and we do not want to concern the user unnecessarily. Still, program behavior is UB afterwards.</p>
+   <p><em>Response</em>:</p>
    <ul>
     <li data-md>
-     <p>disable future reports (future behavior is UB, so reduce noise)</p>
+     <p>Disable future reports (future behavior is UB, so further reports are
+meaningless)</p>
     <li data-md>
-     <p>On Server: infinite loop (wait for debugger)</p>
+     <p>On client machines</p>
+     <ul>
+      <li data-md>
+       <p>Collect and log info (core dump etc.) and call home.</p>
+      <li data-md>
+       <p><em>Do not show</em> error dialog, unless a custom message was requested by the call home.</p>
+     </ul>
     <li data-md>
-     <p>log, collect info, call home.</p>
+     <p>On server</p>
+     <ul>
+      <li data-md>
+       <p>Notify the administrator.</p>
+      <li data-md>
+       <p>Go into infinite loop and wait for a debugger to attach. This prioritizes developer friendliness over user experience.</p>
+     </ul>
    </ul>
-   <p>In all cases, <em>continue running</em>. Please <em>do</em> note the application context.
+   <p>If possible, <em>continue running</em>. Please <em>do</em> note the application context.
 Bloomberg has the exact opposite approach here (always halt on contract
 violations), <em>which is appropriate for their context</em>.</p>
    <h3 class="heading settled" data-level="5.2" id="levels-defined"><span class="secno">5.2. </span><span class="content">Levels with Defined Behavior</span><a class="self-link" href="#levels-defined"></a></h3>
    <p>Level 4 and below are for violations after which behavior is defined. All these
-have a recovery path, therefore it’s always possible to continue running after
+have a recovery path, therefore it is always possible to continue running after
 diagnosis.</p>
    <p>They differ in the way to respond to the assertion failure.</p>
    <h4 class="heading settled" data-level="5.2.1" id="level4"><span class="secno">5.2.1. </span><span class="content">Untested Situation</span><a class="self-link" href="#level4"></a></h4>
    <p><em>Examples</em>:</p>
    <ul>
     <li data-md>
-     <p>Known pathological condition that was not reproduced in the lab, but has a
-recovery path</p>
+     <p>A condition handled in legacy code but which there is no known reproduction.
+Maybe the handling code can be removed?</p>
     <li data-md>
-     <p>An easily-handled API-call error that shouldn’t actually happen, and the
-developer does not know how to trigger it</p>
+     <p>A hooked API emitting an error that we transparently pass to the caller,
+but we have no reproduction for this error and it is unclear if the caller
+would correctly handle such an error.</p>
    </ul>
+   <p>This helps diagnose conditions that are known to be theoretically possible but
+were never observed, so actual behavior is untested and the failure may be
+a harbinger of more serious issues.</p>
+   <p>It also allows asking users how they came to this situation, so it can be
+handled properly in the future.</p>
    <p><em>Response</em>:</p>
    <ul>
     <li data-md>
-     <p>log, collect info, call home</p>
+     <p>Do not disable but throttle future reports to avoid excessive delays in
+program execution</p>
     <li data-md>
-     <p>Debug build: Error dialog (reproduction found!)</p>
+     <p>On client machines</p>
+     <ul>
+      <li data-md>
+       <p>Collect and log info (core dump etc.) and call home.</p>
+      <li data-md>
+       <p><em>Do not show</em> error dialog, unless a custom message was requested by the
+call home.</p>
+     </ul>
+    <li data-md>
+     <p>On server</p>
+     <ul>
+      <li data-md>
+       <p>Notify the administrator</p>
+     </ul>
    </ul>
-   <p>This helps diagnose conditions that are known to be theoretically possible but
-were never observed. It’s really useful for diagnosing conditions that occur
-later, as failures of this kind may be harbingers of later more serious issues.</p>
-   <p>It also allows asking users how they came to this situation, so it can be
-handled properly in the future.</p>
    <h4 class="heading settled" data-level="5.2.2" id="level3"><span class="secno">5.2.2. </span><span class="content">User Experience Degraded</span><a class="self-link" href="#level3"></a></h4>
    <p><em>Examples</em>:</p>
    <ul>
     <li data-md>
-     <p>A 3rd-party bug that isn’t completely mitigated</p>
-    <li data-md>
-     <p>Rare issue that hasn’t been prioritized yet.</p>
+     <p>A 3rd-party bug that is not completely mitigated</p>
    </ul>
    <p><em>Response</em>:</p>
    <ul>
     <li data-md>
-     <p>log (helps with resolving client complaints)</p>
+     <p>Log (helps with resolving client complaints)</p>
     <li data-md>
-     <p>Do not call home. Useful for reproducing user issues, and at that point there
-is a willing user in the conversation.</p>
+     <p>Do not call home. We know the error exists, and will only address it further
+if we receive actual customer complaints.</p>
    </ul>
    <h4 class="heading settled" data-level="5.2.3" id="level2"><span class="secno">5.2.3. </span><span class="content">Possible user environment issue</span><a class="self-link" href="#level2"></a></h4>
    <p><em>Examples</em>: OS misconfiguration, broken PowerPoint installation, 3rd party
@@ -1688,11 +1718,11 @@ plugin that may or may not play nice in the future, etc.</p>
    <p><em>Response</em>:</p>
    <ul>
     <li data-md>
-     <p>don’t even log. (Might not be a problem; if it is, a higher-level assert will
-catch it later, when it <em>becomes</em> a problem.)</p>
+     <p>In regular operation, do not log. The problem is handled correctly, and if everything else works, we do not need to know.</p>
     <li data-md>
-     <p><em>but</em>, during client remote support session, <em>display error dialog</em>. Very
-useful for tech-support.</p>
+     <p><em>unless</em>, during client remote support session, <em>display error dialog</em>,
+because tech support should know about this situation when dealing with a
+bigger issue that may or may not be related.</p>
    </ul>
    <h4 class="heading settled" data-level="5.2.4" id="level1"><span class="secno">5.2.4. </span><span class="content">Trace</span><a class="self-link" href="#level1"></a></h4>
    <p>For exceptional but run-of-the-mill situations the developer wants to log in
@@ -1701,7 +1731,7 @@ debug.</p>
    <p><em>Response</em>:</p>
    <ul>
     <li data-md>
-     <p>log, if in debug mode or in a remote support session. Otherwise, do nothing.</p>
+     <p>Log if in debug mode or in a remote support session. Otherwise, do nothing.</p>
    </ul>
    <h2 class="heading settled" data-level="6" id="requirements"><span class="secno">6. </span><span class="content">Feature Requirements</span><a class="self-link" href="#requirements"></a></h2>
    <p>The contracts support in C++, from afar, looks like it could be coerced to
@@ -1709,21 +1739,36 @@ support our use-cases eventually; however, given the various levels of
 contracts, each with its own idea of what the violation handler needs to do, is
 not obvious as to its implementation.</p>
    <p>Likewise, getting core dumps and stack traces from the violation handler must be
-at least possible for it to be useful at least for the <a href="#level6">§5.1.1 Level 6: Immediate Crash Likely</a> and <a href="#level5">§5.1.2 Level 5: Program Behavior Undefined After Failure</a> CCSs.</p>
+at least possible for it to be useful at least for the <a href="#level4">§5.2.1 Untested Situation</a> and above
+CCSs.</p>
+   <p>Some assertions are wrapped into a special form, such as <code class="highlight"><c- n>TC_ASSERTEQUAL</c-><c- p>(</c-><c- n>x</c-><c- p>,</c-><c- n>y</c-><c- p>)</c-></code>,
+which checks <code class="highlight"><c- n>x</c-><c- o>==</c-><c- n>y</c-></code>, but on failure includes the two values in the error report.</p>
    <h3 class="heading settled" data-level="6.1" id="proposal"><span class="secno">6.1. </span><span class="content">A Straw-Man Proposal</span><a class="self-link" href="#proposal"></a></h3>
-   <p>A <strong>straw-man proposal</strong> that would enable the Think-Cell use-case might be to
-include a user-specified expression that only gets executed upon the failure of
-an assertion, and returns a "context report" object that can then be understood
-by the violation handler, which can dispatch to the appropriate level handler.</p>
-   <p>Consider this contrived example:</p>
-<pre class="language-cpp highlight"><c- b>void</c-> <c- nf>get_cursor_pos</c-><c- p>(</c-><c- b>int</c-><c- o>*</c-> <c- n>out_x</c-><c- p>,</c-> <c- b>int</c-><c- o>*</c-> <c- n>out_y</c-><c- p>)</c->
-  <c- p>[[</c-><c- n>expects</c-> <c- n>check_maybe_continue</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>()</c-><c- o>:</c-> <c- n>x</c-> <c- o>!=</c-> <c- n>null</c-><c- p>]]</c->
-  <c- p>[[</c-><c- n>expects</c-> <c- n>check_maybe_continue</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>()</c-><c- o>:</c-> <c- n>y</c-> <c- o>!=</c-> <c- n>null</c-><c- p>]]</c->
+   <p>A <strong>straw-man proposal</strong> that would enable the think-cell use-case might be to
+make the return value of the predicate available through an additional accessor
+on <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>contract_violation</c-></code>, returning a reference to the type-erased value.
+Of course, the value itself is required to be contextually convertible to <code class="highlight"><c- b>bool</c-></code>.</p>
+<pre class="highlight"><c- n>std</c-><c- o>::</c-><c- n>contract_violation</c-> <c- p>{</c->
+  <c- d>/* ... */</c->
+  <c- n>std</c-><c- o>::</c-><c- n>any</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>predicate_value</c-><c- p>()</c-> <c- k>const</c-> <c- p>{</c->
+   <c- d>/* the std::any is exposition-only - this is probably doable without</c->
+<c- d>      allocation */</c->
+   <c- d>/* return the value the failed predicate returned */</c->
+  <c- p>}</c->
+<c- p>};</c->
+
+<c- n>Consider</c-> <c- k>this</c-> <c- n>contrived</c-> <c- nl>example</c-><c- p>:</c->
+
+```<c- n>cpp</c->
+<c- b>void</c-> <c- n>get_cursor_pos</c-><c- p>(</c-><c- b>int</c-><c- o>*</c-> <c- n>x</c-><c- p>,</c-> <c- b>int</c-><c- o>*</c-> <c- n>y</c-><c- p>)</c->
+  <c- p>[[</c-><c- n>expects</c-> <c- nl>check_maybe_continue</c-><c- p>:</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>(</c-><c- n>x</c-> <c- o>!=</c-> <c- n>null</c-><c- p>)]]</c->
+  <c- p>[[</c-><c- n>expects</c-> <c- nl>check_maybe_continue</c-><c- p>:</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>(</c-><c- n>y</c-> <c- o>!=</c-> <c- n>null</c-><c- p>)]]</c->
 <c- p>{</c->
   <c- n>POINT</c-> <c- n>point</c-><c- p>;</c->
   <c- b>bool</c-> <c- k>const</c-> <c- n>success</c-> <c- o>=</c-> <c- n>GetCursorPos</c-><c- p>(</c-><c- o>&amp;</c-><c- n>point</c-><c- p>);</c->
-  <c- p>[[</c-><c- n>assert</c-> <c- n>check_maybe_continue</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_4</c-><c- p>(</c-><c- s>"unlikely GetCursorPos fail"</c-><c- p>)</c-><c- o>:</c-> <c- n>success</c-><c- p>]]</c->
-  <c- k>if</c-> <c- p>(</c-><c- o>!</c-><c- n>success</c-><c- p>)</c-> <c- p>{</c-> <c- c1>// this probably never happens</c->
+  <c- p>[[</c-><c- n>assert</c-> <c- nl>check_maybe_continue</c-><c- p>:</c->
+       <c- n>tc</c-><c- o>::</c-><c- n>level_4</c-><c- p>(</c-><c- n>success</c-><c- p>,</c-> <c- s>"unlikely GetCursorPos fail"</c-><c- p>)]]</c->
+  <c- k>if</c-> <c- p>(</c-><c- o>!</c-><c- n>success</c-><c- p>)</c-> <c- p>{</c-> <c- c1>// does this ever happen?</c->
     <c- n>point</c-><c- p>.</c-><c- n>x</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c->
     <c- n>point</c-><c- p>.</c-><c- n>y</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c->
   <c- p>}</c->
@@ -1731,24 +1776,16 @@ by the violation handler, which can dispatch to the appropriate level handler.</
   <c- o>*</c-><c- n>y</c-> <c- o>=</c-> <c- n>point</c-><c- p>.</c-><c- n>y</c-><c- p>;</c->
 <c- p>}</c->
 </pre>
-   <p>If you would like to stay true to <a data-link-type="biblio" href="#biblio-n4800">[n4800]</a>, mentally substitute <code class="highlight"><c- n>check_maybe_continue</c-></code> for <code class="highlight"><c- k>default</c-></code>, which we would ensure to mean <code class="highlight"><c- n>check_maybe_continue</c-></code> at build time.</p>
-   <p>The above, however, would require <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>contract_violation</c-></code> to expose an
-additional member function that grants access to a type-erased object
-initialized as the payload part of the contract violation:</p>
-<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>contract_violation</c-> <c- p>{</c->
-  <c- d>/* ... */</c->
-  <c- n>std</c-><c- o>::</c-><c- n>any</c-> <c- d>/*exposition only*/</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>user_data</c-><c- p>()</c-> <c- k>const</c-><c- p>;</c->
-<c- p>}</c->
-</pre>
-   <p>This would allow the violation handler to actually perform the various duties
-outlined above.</p>
-   <p><strong>The mechanism proposed above is most probably a bad idea</strong>. However, it would
-get the job done, for better or for worse. This paper is about existing
-practice. The authors implore the committee to come up with a solution.</p>
+   <p>If you would like to stay true to <a data-link-type="biblio" href="#biblio-n4800">[n4800]</a>, mentally substitute
+`check_maybe_continue` for `default`, which we would ensure to mean
+`check_maybe_continue` at build time.</p>
+   <p><strong>The mechanism proposed above is very rudimentary</strong>. However, it would get the
+job done, for better or worse. This paper is about existing practice. The
+authors implore the committee to come up with a solution.</p>
    <h2 class="heading settled" data-level="7" id="FAQ"><span class="secno">7. </span><span class="content">FAQ</span><a class="self-link" href="#FAQ"></a></h2>
-   <h3 class="heading settled" data-level="7.1" id="faq-ub"><span class="secno">7.1. </span><span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic introduce UB?</span><a class="self-link" href="#faq-ub"></a></h3>
-   <p>No, but some committee members seem to think it can. It shouldn’t be able to -
-an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic on a Contract Checking Statement (CCS) does not
+   <h3 class="heading settled" data-level="7.1" id="faq-ub"><span class="secno">7.1. </span><span class="content">Can a CCS with an `check_maybe_continue` semantic introduce UB?</span><a class="self-link" href="#faq-ub"></a></h3>
+   <p>No, but some committee members seem to think it can. It shouldn’t be able to - a
+`check_maybe_continue` semantic on a Contract Checking Statement (CCS) does not
 allow the compiler to assume the CCS is true in the subsequent code.</p>
   </main>
 <script>
