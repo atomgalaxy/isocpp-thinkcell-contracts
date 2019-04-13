@@ -1,11 +1,11 @@
 <pre class='metadata'>
-Title: How Think-Cell Uses Contracts
+Title: How think-cell Uses Contracts
 Status: D
 Audience: LEWG, EWG
 Editor: Gašper Ažman <gasper.azman@gmail.com>
-Editor: Arno Schödl <XXX@think-cell.com>
+Editor: Arno Schödl <aschoedl@think-cell.com>
 Shortname: DXXXX
-Abstract: Think-Cell's product employs contract assertions to great effect. It would be a shame if the contracts feature in C++ didn't support their use pattern. This is a report on the pattern and its requirements.
+Abstract: think-cell's product employs contract assertions to great effect. It would be a shame if the contracts feature in C++ didn't support their use pattern. This is a report on the pattern and its requirements.
 Group: WG21
 Date: 2019-04-06
 Markup Shorthands: markdown yes
@@ -63,18 +63,17 @@ This document was conceived when Gašper Ažman saw Arno Schödl's talk [[AS2019
 ([[ErrHdlSlides|slides]]).
 
 
-Context of Think-Cell {#context}
+Context of think-cell {#context}
 ================================
 
-Think-Cell vend an add-on for Microsoft PowerPoint for use on client machines.
+think-cell sells an add-on for Microsoft PowerPoint for use on client machines.
 The work-product of the user and software is a PowerPoint document. Such a
 document is correct by inspection. The worst-case scenario for the user is
 crashing and losing work, which is mitigated by autosaving and backups. The
-worst-cases for Think-Cell are losing customers and doing customer support.
+worst-cases for think-cell are losing customers and doing customer support.
 
 Given that the product automates a lot of interaction with PowerPoint, rollback
-of state is usually impossible on a per-action basis, so the basic exception
-guarantee is the default.
+of state is usually impossible on a per-action basis, so in practice the software must provide a no-fail guarantee.
 
 For such a product context, the company has perfected a particular approach to
 contracts and handling disappointment. This approach has worked extremely well,
@@ -84,7 +83,7 @@ it.
 
 **This approach is not appropriate for all software.** It is, however,
 extremely appropriate for the above context. We are trying to ensure the
-contracts in C++ are flexible enough to accommodate this use-case, not advocate
+contracts in C++ are flexible enough to accommodate this use-case, rather than advocating
 for this to be the only use-case.
 
 
@@ -108,34 +107,34 @@ into two classes:
 This document deals with the second class. The first class can be legitimately
 thought-of as normal operation.
 
-
 Design Rationale {#rationale}
 =============================
 
-This schema optimizes for developer, followed by customer satisfaction;
+This scheme optimizes for developers, followed by customer satisfaction;
 developers have limited time, so effort should be spent on fixing and handling
 errors that actually pose problems for users. Once a user gets an error, they
 are inconvenienced regardless of the severity. The users are therefore best
 served by fast bug-fixing and triage, because it allows for the best
 prioritization of work.
 
-In addition, developers in the wild often skip error checking because they don't
-know what to do in the event of failure; at Think-Cell, checking is never
+In addition, developers in the wild often skip error checking because they do not
+know what to do in the event of failure; at think-cell, checking is never
 skipped &mdash; *recovery* is.
 
 In other words: if you thought of a possible issue, write an `assert`. The
-`assert` will get a recovery path if it's ever triggered and prioritized.
+`assert` will get a recovery path if it is ever triggered and prioritized.
 
-This means that all calls to Windows APIs get post-condition `assert`s (which
-sometimes exposes resource leaks elsewhere in the program, if they fail - such
-conditions are *not* recoverable at the point of failure). All function
+This means that all calls to Windows APIs get post-condition `assert`s. All function
 preconditions get `assert`s. Everything gets an `assert`.
+
+API errors in particular often point to non-local problems.
+For example, resource acquisition may fail because of a resource leak elsewhere.
+Time is better invested in finding the leak than in local recovery.
 
 *Asserts also have bugs*: `check_maybe_continue` makes `assert` bugs a non-problem
 for users. Once the software calls home with false-positive reports, the bugs
 will be fixed. `check_maybe_continue` makes it far less risky to write and ship
 `assert`s.
-
 
 The Levels of Assertions {#leveling}
 ====================================
@@ -145,44 +144,44 @@ Levels with Undefined Behavior {#levels-UB}
 
 These two levels are for asserts after which behavior is UB.
 
-
 ### Level 6: Immediate Crash Likely ### {#level6}
 
-*Examples*: nullptr access, out-of-bounds access, unanticipated API call
-failures.
+*Examples*: nullptr access, out-of-bounds access, failures of API calls that are expected to always succeed.
 
-False alarms are unlikely at this level.
-
-API calls don't fail spuriously, and it is unlikely that the actual bug is
-close. Program operation also *requires* the API call to succeed, so termination
-or hard-UB is likely.
-
-*Anticipated and undrestood API-call failures do not belong in this
-category.*
+False alarms are unlikely at this level. nullptr access or out-of-bounds access is by definition incorrect.
+API calls serve a purpose, so if they fail, the program is unlikely to work correctly.
 
 *Response*:
--   Disable future reports (future behavior is UB)
--   On Client Machines:
-    - Error dialog. This increases the chance of getting more info.
--   On Server: goto infinite loop and wait for a debugger to attach.
--   Disable future error reporting because we are then in UB-land.
--   Log, collect info (core dump etc) and call home / prepare email.
+-   Disable future reports (future behavior is UB, so further reports are meaingless)
+-   On client machines
+    - Collect and log info (core dump etc.) and call home / prepare email with that information.
+    - Show error dialog, possibly with custom messages requested by the call home. This increases the chance of getting more info from the user.
+-   On server
+    - Notify the administrator.
+    - Go into infinite loop and wait for a debugger to attach.
 
 
 ### Level 5: Program Behavior Undefined After Failure ### {#level5}
 
-*Examples*: Assert failed (precondition violation)
+*Examples*: Assert failed (e.g., precondition violation), but assertions can have bugs, too;
+failures of API calls where the actual error code is unexpected, but a different error code is
+anticipated and handled: the anticipated error handling path may
+happen to work for the unanticipated error.
+Example: if opening a file already anticipates a missing file, but is encountering a denied access, the program is likely to continue
+without crashing.*
 
-This error category is for assertions which, if they fail, there is no way the
-program is correct.
+At this level, a false alarm or at least correct continuation despite the problem is possible, and we do not want to concern the user unnecessarily. Still, program behavior is UB afterwards.
 
-Asserts can have bugs, so no error dialog to the user here, but:
+*Response*:
+-   Disable future reports (future behavior is UB, so further reports are meaingless)
+-   On client machines
+    - Collect and log info (core dump etc.) and call home.
+    - *Do not show* error dialog, unless a custom message was requested by the call home.
+-   On server
+    - Notify the administrator.
+    - Go into infinite loop and wait for a debugger to attach. This prioritizes developer friendliness over user experience.
 
-- disable future reports (future behavior is UB, so reduce noise)
-- On Server: infinite loop (wait for debugger)
-- log, collect info, call home.
-
-In all cases, *continue running*. Please *do* note the application context.
+If possible, *continue running*. Please *do* note the application context.
 Bloomberg has the exact opposite approach here (always halt on contract
 violations), *which is appropriate for their context*.
 
@@ -191,42 +190,41 @@ Levels with Defined Behavior {#levels-defined}
 ----------------------------------------------
 
 Level 4 and below are for violations after which behavior is defined. All these
-have a recovery path, therefore it's always possible to continue running after
+have a recovery path, therefore it is always possible to continue running after
 diagnosis.
 
 They differ in the way to respond to the assertion failure.
 
-
 ### Untested Situation ### {#level4}
 
 *Examples*:
-- Known pathological condition that was not reproduced in the lab, but has a
-    recovery path
-- An easily-handled API-call error that shouldn't actually happen, and the
-    developer does not know how to trigger it
-
-*Response*:
-- log, collect info, call home
-- Debug build: Error dialog (reproduction found!)
+- A condition handled in legacy code but which there is no known reproduction. Maybe the handling code can be removed?
+- A hooked API emitting an error that we transparently pass to the caller,
+  but we have no reproduction for this error and it is unclear if the caller would correctly handle such an error.
 
 This helps diagnose conditions that are known to be theoretically possible but
-were never observed. It's really useful for diagnosing conditions that occur
-later, as failures of this kind may be harbingers of later more serious issues.
+were never observed, so actual behavior is untested and the failure may be harbinger of more serious issues.
 
 It also allows asking users how they came to this situation, so it can be
 handled properly in the future.
+
+*Response*:
+-   Do not disable but throttle future reports to avoid excessive delays in program execution
+-   On client machines
+    - Collect and log info (core dump etc.) and call home.
+    - *Do not show* error dialog, unless a custom message was requested by the call home.
+-   On server
+    - Notify the administrator
 
 
 ### User Experience Degraded ### {#level3}
 
 *Examples*:
-- A 3rd-party bug that isn't completely mitigated
-- Rare issue that hasn't been prioritized yet.
+- A 3rd-party bug that is not completely mitigated
 
 *Response*:
-- log (helps with resolving client complaints)
-- Do not call home. Useful for reproducing user issues, and at that point there
-    is a willing user in the conversation.
+- Log (helps with resolving client complaints)
+- Do not call home. We know the error exists, and will only address it further if we receive actual customer complaints.
 
 
 ### Possible user environment issue ### {#level2}
@@ -235,11 +233,9 @@ handled properly in the future.
 plugin that may or may not play nice in the future, etc.
 
 *Response*:
-- don't even log. (Might not be a problem; if it is, a higher-level assert will
-    catch it later, when it *becomes* a problem.)
-- *but*, during client remote support session, *display error dialog*. Very
-    useful for tech-support.
-
+- In regular operation, do not log. The problem is handled correctly, and if everything else works, we do not need to know.
+- *unless*, during client remote support session, *display error dialog*,
+  because tech support should know about this situation when dealing with a bigger issue that may or may not be related.
 
 ### Trace ### {#level1}
 
@@ -249,7 +245,7 @@ debug.
 *Example*: file-not-found when opening a file.
 
 *Response*:
-- log, if in debug mode or in a remote support session. Otherwise, do nothing.
+- Log if in debug mode or in a remote support session. Otherwise, do nothing.
 
 
 Feature Requirements {#requirements}
@@ -261,28 +257,30 @@ contracts, each with its own idea of what the violation handler needs to do, is
 not obvious as to its implementation.
 
 Likewise, getting core dumps and stack traces from the violation handler must be
-at least possible for it to be useful at least for the [[#level6]] and
-[[#level5]] CCSs.
+at least possible for it to be useful at least for the [[#level4]] and above CCSs.
+
+Some assertions are wrapped into a special form, such as `_ASSERTEQUAL(x,y)`, which
+checks `x==y`, but on failure includes the two values in the error report.
 
 A Straw-Man Proposal {#proposal}
 --------------------------------
 
-A **straw-man proposal** that would enable the Think-Cell use-case might be to
-include a user-specified expression that only gets executed upon the failure of
-an assertion, and returns a "context report" object that can then be understood
-by the violation handler, which can dispatch to the appropriate level handler.
+A **straw-man proposal** that would enable the think-cell use-case might be the condition
+to return a type contextually convertible to bool, which if evaluating to false, get passed,
+along with the regular `std::contract_violation`, to a specified (templated) handler
+(`tc::level_6`) and may contain extra information (such as, in case of _ASSERTEQUAL, the two values).
 
 Consider this contrived example:
 
 ```cpp
-void get_cursor_pos(int* out_x, int* out_y)
+void get_cursor_pos(int* x, int* y)
   [[expects check_maybe_continue tc::level_6(): x != null]]
   [[expects check_maybe_continue tc::level_6(): y != null]]
 {
   POINT point;
   bool const success = GetCursorPos(&point);
   [[assert check_maybe_continue tc::level_4("unlikely GetCursorPos fail"): success]]
-  if (!success) { // this probably never happens
+  if (!success) { // does this ever happen?
     point.x = 0;
     point.y = 0;
   }
@@ -295,22 +293,8 @@ If you would like to stay true to [[n4800]], mentally substitute
 `check_maybe_continue` for `default`, which we would ensure to mean `check_maybe_continue`
 at build time.
 
-The above, however, would require `std::contract_violation` to expose an
-additional member function that grants access to a type-erased object
-initialized as the payload part of the contract violation:
-
-```cpp
-struct contract_violation {
-  /* ... */
-  std::any /*exposition only*/ const& user_data() const;
-}
-```
-
-This would allow the violation handler to actually perform the various duties
-outlined above.
-
 **The mechanism proposed above is most probably a bad idea**. However, it would
-get the job done, for better or for worse. This paper is about existing
+get the job done, for better or worse. This paper is about existing
 practice. The authors implore the committee to come up with a solution.
 
 
@@ -321,5 +305,5 @@ Can a CCS with an `check_maybe_continue` semantic introduce UB?  {#faq-ub}
 -------------------------------------------------------------------------
 
 No, but some committee members seem to think it can. It shouldn't be able to -
-an `check_maybe_continue` semantic on a Contract Checking Statement (CCS) does not
+a `check_maybe_continue` semantic on a Contract Checking Statement (CCS) does not
 allow the compiler to assume the CCS is true in the subsequent code.
