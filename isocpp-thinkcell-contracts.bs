@@ -282,6 +282,7 @@ on `std::contract_violation`, returning a reference to the type-erased value.
 Of course, the value itself is required to be contextually convertible to
 `bool`.
 
+This would make `contract_violation` look a bit like this:
 ```
 std::contract_violation {
   /* ... */
@@ -291,8 +292,9 @@ std::contract_violation {
    /* return the value the failed predicate returned */
   }
 };
+```
 
-Consider this contrived example:
+The client code would look like this &mdash; consider this contrived example:
 
 ```cpp
 void get_cursor_pos(int* x, int* y)

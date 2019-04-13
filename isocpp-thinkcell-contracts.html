@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version 04b354547d55896d854a81cffb3965bd6f8758ec" name="generator">
   <link href="https://atomgalaxy.github.io/isocpp-thinkcell-contracts/isocpp-thinkcell-contracts.html" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="c438f159c131ed7b9ce11e6a04e055509be87f96" name="document-revision">
+  <meta content="7544bbfa0cefa35e17ae726d8f3a8f504df2feaa" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1515,7 +1515,7 @@ pre .property::before, pre .property::after {
     <li>
      <a href="#FAQ"><span class="secno">7</span> <span class="content">FAQ</span></a>
      <ol class="toc">
-      <li><a href="#faq-ub"><span class="secno">7.1</span> <span class="content">Can a CCS with an `check_maybe_continue` semantic introduce UB?</span></a>
+      <li><a href="#faq-ub"><span class="secno">7.1</span> <span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic introduce UB?</span></a>
      </ol>
     <li>
      <a href="#references"><span class="secno"></span> <span class="content">References</span></a>
@@ -1748,6 +1748,7 @@ which checks <code class="highlight"><c- n>x</c-><c- o>==</c-><c- n>y</c-></code
 make the return value of the predicate available through an additional accessor
 on <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>contract_violation</c-></code>, returning a reference to the type-erased value.
 Of course, the value itself is required to be contextually convertible to <code class="highlight"><c- b>bool</c-></code>.</p>
+   <p>This would make <code class="highlight"><c- n>contract_violation</c-></code> look a bit like this:</p>
 <pre class="highlight"><c- n>std</c-><c- o>::</c-><c- n>contract_violation</c-> <c- p>{</c->
   <c- d>/* ... */</c->
   <c- n>std</c-><c- o>::</c-><c- n>any</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>predicate_value</c-><c- p>()</c-> <c- k>const</c-> <c- p>{</c->
@@ -1756,11 +1757,9 @@ Of course, the value itself is required to be contextually convertible to <code 
    <c- d>/* return the value the failed predicate returned */</c->
   <c- p>}</c->
 <c- p>};</c->
-
-<c- n>Consider</c-> <c- k>this</c-> <c- n>contrived</c-> <c- nl>example</c-><c- p>:</c->
-
-```<c- n>cpp</c->
-<c- b>void</c-> <c- n>get_cursor_pos</c-><c- p>(</c-><c- b>int</c-><c- o>*</c-> <c- n>x</c-><c- p>,</c-> <c- b>int</c-><c- o>*</c-> <c- n>y</c-><c- p>)</c->
+</pre>
+   <p>The client code would look like this — consider this contrived example:</p>
+<pre class="language-cpp highlight"><c- b>void</c-> <c- nf>get_cursor_pos</c-><c- p>(</c-><c- b>int</c-><c- o>*</c-> <c- n>x</c-><c- p>,</c-> <c- b>int</c-><c- o>*</c-> <c- n>y</c-><c- p>)</c->
   <c- p>[[</c-><c- n>expects</c-> <c- nl>check_maybe_continue</c-><c- p>:</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>(</c-><c- n>x</c-> <c- o>!=</c-> <c- n>null</c-><c- p>)]]</c->
   <c- p>[[</c-><c- n>expects</c-> <c- nl>check_maybe_continue</c-><c- p>:</c-> <c- n>tc</c-><c- o>::</c-><c- n>level_6</c-><c- p>(</c-><c- n>y</c-> <c- o>!=</c-> <c- n>null</c-><c- p>)]]</c->
 <c- p>{</c->
@@ -1776,16 +1775,13 @@ Of course, the value itself is required to be contextually convertible to <code 
   <c- o>*</c-><c- n>y</c-> <c- o>=</c-> <c- n>point</c-><c- p>.</c-><c- n>y</c-><c- p>;</c->
 <c- p>}</c->
 </pre>
-   <p>If you would like to stay true to <a data-link-type="biblio" href="#biblio-n4800">[n4800]</a>, mentally substitute
-`check_maybe_continue` for `default`, which we would ensure to mean
-`check_maybe_continue` at build time.</p>
+   <p>If you would like to stay true to <a data-link-type="biblio" href="#biblio-n4800">[n4800]</a>, mentally substitute <code class="highlight"><c- n>check_maybe_continue</c-></code> for <code class="highlight"><c- k>default</c-></code>, which we would ensure to mean <code class="highlight"><c- n>check_maybe_continue</c-></code> at build time.</p>
    <p><strong>The mechanism proposed above is very rudimentary</strong>. However, it would get the
 job done, for better or worse. This paper is about existing practice. The
 authors implore the committee to come up with a solution.</p>
    <h2 class="heading settled" data-level="7" id="FAQ"><span class="secno">7. </span><span class="content">FAQ</span><a class="self-link" href="#FAQ"></a></h2>
-   <h3 class="heading settled" data-level="7.1" id="faq-ub"><span class="secno">7.1. </span><span class="content">Can a CCS with an `check_maybe_continue` semantic introduce UB?</span><a class="self-link" href="#faq-ub"></a></h3>
-   <p>No, but some committee members seem to think it can. It shouldn’t be able to - a
-`check_maybe_continue` semantic on a Contract Checking Statement (CCS) does not
+   <h3 class="heading settled" data-level="7.1" id="faq-ub"><span class="secno">7.1. </span><span class="content">Can a CCS with an <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic introduce UB?</span><a class="self-link" href="#faq-ub"></a></h3>
+   <p>No, but some committee members seem to think it can. It shouldn’t be able to - a <code class="highlight"><c- n>check_maybe_continue</c-></code> semantic on a Contract Checking Statement (CCS) does not
 allow the compiler to assume the CCS is true in the subsequent code.</p>
   </main>
 <script>
